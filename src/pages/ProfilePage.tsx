@@ -6,8 +6,9 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Switch } from '@/components/ui/switch';
 import { useAuth } from '@/contexts/AuthContext';
-import { authApi } from '@/services/api';
+import { authApi, kycApi } from '@/services/api';
 import { FadeIn } from '@/components/ui/motion';
 import { Loader2, Upload } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
@@ -17,12 +18,14 @@ const ProfilePage: React.FC = () => {
   const { toast } = useToast();
   
   const [formData, setFormData] = useState({
-    name: '',
+    full_name: '',
     email: '',
-    phone: '',
-    location: '',
-    bio: '',
-    avatar: '',
+    phone_number: '',
+    location: '', // Not in API but keeping for UI
+    bio: '', // Not in API but keeping for UI
+    avatar: '', // Not in API but keeping for UI
+    available: false,
+    kyc_document_url: ''
   });
   
   const [isLoading, setIsLoading] = useState(true);
@@ -37,12 +40,14 @@ const ProfilePage: React.FC = () => {
         const profileData = await authApi.getUserProfile(user.id);
         
         setFormData({
-          name: profileData.name || '',
+          full_name: profileData.full_name || '',
           email: profileData.email || '',
-          phone: profileData.phone || '',
-          location: profileData.location || '',
-          bio: profileData.bio || '',
-          avatar: profileData.avatar || '',
+          phone_number: profileData.phone_number || '',
+          location: profileData.location || '', // Keep for backward compatibility
+          bio: profileData.bio || '', // Keep for backward compatibility
+          avatar: profileData.avatar || '', // Keep for backward compatibility
+          available: profileData.available || false,
+          kyc_document_url: profileData.kyc_document_url || ''
         });
       } catch (error) {
         console.error('Error fetching profile:', error);
@@ -64,6 +69,10 @@ const ProfilePage: React.FC = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
   
+  const handleAvailabilityChange = (checked: boolean) => {
+    setFormData(prev => ({ ...prev, available: checked }));
+  };
+  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -72,9 +81,17 @@ const ProfilePage: React.FC = () => {
     try {
       setIsSaving(true);
       
-      // This is a mock update since we don't have an actual endpoint
-      // In a real app, you would call an API to update the profile
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // This endpoint doesn't exist in the API spec, but would be needed
+      // for a complete implementation
+      // await authApi.updateProfile(user.id, formData);
+      
+      // Update availability status
+      if (user.available !== formData.available) {
+        await kycApi.uploadKYC({
+          user_id: user.id,
+          kyc_document_url: formData.kyc_document_url || ''
+        });
+      }
       
       toast({
         title: "Profile Updated",
@@ -125,8 +142,8 @@ const ProfilePage: React.FC = () => {
           
           <div className="mb-8 flex flex-col items-center">
             <Avatar className="h-24 w-24 mb-4">
-              <AvatarImage src={formData.avatar} alt={formData.name} />
-              <AvatarFallback className="text-lg">{getInitials(formData.name)}</AvatarFallback>
+              <AvatarImage src={formData.avatar} alt={formData.full_name} />
+              <AvatarFallback className="text-lg">{getInitials(formData.full_name)}</AvatarFallback>
             </Avatar>
             <Button variant="outline" size="sm">
               <Upload className="h-4 w-4 mr-2" />
@@ -146,11 +163,11 @@ const ProfilePage: React.FC = () => {
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label htmlFor="name">Full Name</Label>
+                    <Label htmlFor="full_name">Full Name</Label>
                     <Input
-                      id="name"
-                      name="name"
-                      value={formData.name}
+                      id="full_name"
+                      name="full_name"
+                      value={formData.full_name}
                       onChange={handleChange}
                     />
                   </div>
@@ -171,11 +188,11 @@ const ProfilePage: React.FC = () => {
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="phone">Phone Number</Label>
+                    <Label htmlFor="phone_number">Phone Number</Label>
                     <Input
-                      id="phone"
-                      name="phone"
-                      value={formData.phone}
+                      id="phone_number"
+                      name="phone_number"
+                      value={formData.phone_number}
                       onChange={handleChange}
                       placeholder="e.g., +1 (123) 456-7890"
                     />
@@ -190,6 +207,31 @@ const ProfilePage: React.FC = () => {
                       onChange={handleChange}
                       placeholder="e.g., New York, USA"
                     />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="kyc_document_url">KYC Document URL</Label>
+                    <Input
+                      id="kyc_document_url"
+                      name="kyc_document_url"
+                      value={formData.kyc_document_url}
+                      onChange={handleChange}
+                      placeholder="https://example.com/kyc-document.pdf"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2">
+                      <Switch 
+                        id="available" 
+                        checked={formData.available}
+                        onCheckedChange={handleAvailabilityChange}
+                      />
+                      <Label htmlFor="available">Available as Traveler</Label>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Toggle this to show that you're available to deliver items
+                    </p>
                   </div>
                 </div>
                 

@@ -6,8 +6,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/contexts/AuthContext';
-import { shoppingRequestsApi } from '@/services/api';
+import { shoppingRequestsApi, ShoppingRequest } from '@/services/api';
 import { FadeIn } from '@/components/ui/motion';
 import { CalendarIcon, Loader2 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
@@ -16,20 +17,31 @@ import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
+// Sample categories
+const categories = [
+  "Electronics",
+  "Clothing",
+  "Books",
+  "Beauty & Health",
+  "Toys & Games",
+  "Sports & Outdoors",
+  "Home & Kitchen",
+  "Other"
+];
+
 const CreateRequestPage: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   
   const [formData, setFormData] = useState({
-    item_name: '',
-    item_description: '',
-    item_url: '',
-    item_price: '',
-    shipping_from: '',
-    shipping_to: '',
-    reward_amount: '',
-    delivery_by: null as Date | null,
+    product_name: '',
+    category: '',
+    price: '',
+    seller_location: '',
+    description: '', // Not directly in API but useful for UI
+    product_url: '', // Not directly in API but useful for UI
+    required_by: null as Date | null,
   });
   
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -49,14 +61,27 @@ const CreateRequestPage: React.FC = () => {
     }
   };
   
+  const handleSelectChange = (value: string) => {
+    setFormData(prev => ({ ...prev, category: value }));
+    
+    // Clear error when user selects a category
+    if (errors.category) {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors.category;
+        return newErrors;
+      });
+    }
+  };
+  
   const handleDateChange = (date: Date | undefined) => {
     if (date) {
-      setFormData(prev => ({ ...prev, delivery_by: date }));
+      setFormData(prev => ({ ...prev, required_by: date }));
       // Clear error when user selects a date
-      if (errors.delivery_by) {
+      if (errors.required_by) {
         setErrors(prev => {
           const newErrors = { ...prev };
-          delete newErrors.delivery_by;
+          delete newErrors.required_by;
           return newErrors;
         });
       }
@@ -66,36 +91,26 @@ const CreateRequestPage: React.FC = () => {
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
     
-    if (!formData.item_name.trim()) {
-      newErrors.item_name = 'Item name is required';
+    if (!formData.product_name.trim()) {
+      newErrors.product_name = 'Product name is required';
     }
     
-    if (!formData.item_description.trim()) {
-      newErrors.item_description = 'Item description is required';
+    if (!formData.category) {
+      newErrors.category = 'Category is required';
     }
     
-    if (!formData.item_price.trim()) {
-      newErrors.item_price = 'Item price is required';
-    } else if (isNaN(Number(formData.item_price)) || Number(formData.item_price) <= 0) {
-      newErrors.item_price = 'Item price must be a positive number';
+    if (!formData.price.trim()) {
+      newErrors.price = 'Price is required';
+    } else if (isNaN(Number(formData.price)) || Number(formData.price) <= 0) {
+      newErrors.price = 'Price must be a positive number';
     }
     
-    if (!formData.shipping_from.trim()) {
-      newErrors.shipping_from = 'Source location is required';
+    if (!formData.seller_location.trim()) {
+      newErrors.seller_location = 'Seller location is required';
     }
     
-    if (!formData.shipping_to.trim()) {
-      newErrors.shipping_to = 'Destination location is required';
-    }
-    
-    if (!formData.reward_amount.trim()) {
-      newErrors.reward_amount = 'Reward amount is required';
-    } else if (isNaN(Number(formData.reward_amount)) || Number(formData.reward_amount) <= 0) {
-      newErrors.reward_amount = 'Reward amount must be a positive number';
-    }
-    
-    if (!formData.delivery_by) {
-      newErrors.delivery_by = 'Delivery by date is required';
+    if (!formData.required_by) {
+      newErrors.required_by = 'Required by date is required';
     }
     
     setErrors(newErrors);
@@ -110,19 +125,16 @@ const CreateRequestPage: React.FC = () => {
     try {
       setIsLoading(true);
       
-      const requestData = {
-        user_id: user.id,
-        item_name: formData.item_name,
-        item_description: formData.item_description,
-        item_url: formData.item_url,
-        item_price: Number(formData.item_price),
-        shipping_from: formData.shipping_from,
-        shipping_to: formData.shipping_to,
-        reward_amount: Number(formData.reward_amount),
-        delivery_by_date: formData.delivery_by?.toISOString() || new Date().toISOString(),
+      const requestData: Partial<ShoppingRequest> = {
+        shopper_id: user.id,
+        product_name: formData.product_name,
+        category: formData.category,
+        price: Number(formData.price),
+        seller_location: formData.seller_location,
+        required_by: formData.required_by?.toISOString() || new Date().toISOString(),
       };
       
-      await shoppingRequestsApi.create(requestData);
+      await shoppingRequestsApi.create(requestData as any);
       
       toast({
         title: "Request Created",
@@ -166,153 +178,136 @@ const CreateRequestPage: React.FC = () => {
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="item_name">Item Name *</Label>
+                      <Label htmlFor="product_name">Product Name *</Label>
                       <Input
-                        id="item_name"
-                        name="item_name"
+                        id="product_name"
+                        name="product_name"
                         placeholder="e.g., Apple AirPods Pro"
-                        value={formData.item_name}
+                        value={formData.product_name}
                         onChange={handleChange}
-                        className={errors.item_name ? 'border-red-500' : ''}
+                        className={errors.product_name ? 'border-red-500' : ''}
                       />
-                      {errors.item_name && (
-                        <p className="text-red-500 text-xs mt-1">{errors.item_name}</p>
+                      {errors.product_name && (
+                        <p className="text-red-500 text-xs mt-1">{errors.product_name}</p>
                       )}
                     </div>
                     
                     <div className="space-y-2">
-                      <Label htmlFor="item_description">Description *</Label>
+                      <Label htmlFor="category">Category *</Label>
+                      <Select 
+                        value={formData.category} 
+                        onValueChange={handleSelectChange}
+                      >
+                        <SelectTrigger 
+                          id="category"
+                          className={errors.category ? 'border-red-500' : ''}
+                        >
+                          <SelectValue placeholder="Select a category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {categories.map((category) => (
+                            <SelectItem key={category} value={category}>
+                              {category}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {errors.category && (
+                        <p className="text-red-500 text-xs mt-1">{errors.category}</p>
+                      )}
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="description">Description (optional)</Label>
                       <Textarea
-                        id="item_description"
-                        name="item_description"
+                        id="description"
+                        name="description"
                         placeholder="Provide a detailed description of the item"
-                        value={formData.item_description}
+                        value={formData.description}
                         onChange={handleChange}
-                        className={cn("min-h-32 resize-none", errors.item_description ? 'border-red-500' : '')}
+                        className="min-h-32 resize-none"
                       />
-                      {errors.item_description && (
-                        <p className="text-red-500 text-xs mt-1">{errors.item_description}</p>
-                      )}
                     </div>
                     
                     <div className="space-y-2">
-                      <Label htmlFor="item_url">Item URL (optional)</Label>
+                      <Label htmlFor="product_url">Product URL (optional)</Label>
                       <Input
-                        id="item_url"
-                        name="item_url"
+                        id="product_url"
+                        name="product_url"
                         placeholder="e.g., https://www.amazon.com/product"
-                        value={formData.item_url}
+                        value={formData.product_url}
                         onChange={handleChange}
                       />
                     </div>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="item_price">Item Price ($) *</Label>
+                        <Label htmlFor="price">Product Price ($) *</Label>
                         <Input
-                          id="item_price"
-                          name="item_price"
+                          id="price"
+                          name="price"
                           type="number"
                           min="0"
                           step="0.01"
                           placeholder="e.g., 199.99"
-                          value={formData.item_price}
+                          value={formData.price}
                           onChange={handleChange}
-                          className={errors.item_price ? 'border-red-500' : ''}
+                          className={errors.price ? 'border-red-500' : ''}
                         />
-                        {errors.item_price && (
-                          <p className="text-red-500 text-xs mt-1">{errors.item_price}</p>
+                        {errors.price && (
+                          <p className="text-red-500 text-xs mt-1">{errors.price}</p>
                         )}
                       </div>
                       
                       <div className="space-y-2">
-                        <Label htmlFor="reward_amount">Traveler Reward ($) *</Label>
+                        <Label htmlFor="seller_location">Seller Location *</Label>
                         <Input
-                          id="reward_amount"
-                          name="reward_amount"
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          placeholder="e.g., 30.00"
-                          value={formData.reward_amount}
+                          id="seller_location"
+                          name="seller_location"
+                          placeholder="e.g., New York, USA"
+                          value={formData.seller_location}
                           onChange={handleChange}
-                          className={errors.reward_amount ? 'border-red-500' : ''}
+                          className={errors.seller_location ? 'border-red-500' : ''}
                         />
-                        {errors.reward_amount && (
-                          <p className="text-red-500 text-xs mt-1">{errors.reward_amount}</p>
+                        {errors.seller_location && (
+                          <p className="text-red-500 text-xs mt-1">{errors.seller_location}</p>
                         )}
                       </div>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="border-t border-border/50 pt-6">
-                  <h3 className="font-medium mb-4">Shipping Information</h3>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="shipping_from">Buy From Location *</Label>
-                      <Input
-                        id="shipping_from"
-                        name="shipping_from"
-                        placeholder="e.g., New York, USA"
-                        value={formData.shipping_from}
-                        onChange={handleChange}
-                        className={errors.shipping_from ? 'border-red-500' : ''}
-                      />
-                      {errors.shipping_from && (
-                        <p className="text-red-500 text-xs mt-1">{errors.shipping_from}</p>
-                      )}
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="shipping_to">Deliver To Location *</Label>
-                      <Input
-                        id="shipping_to"
-                        name="shipping_to"
-                        placeholder="e.g., London, UK"
-                        value={formData.shipping_to}
-                        onChange={handleChange}
-                        className={errors.shipping_to ? 'border-red-500' : ''}
-                      />
-                      {errors.shipping_to && (
-                        <p className="text-red-500 text-xs mt-1">{errors.shipping_to}</p>
-                      )}
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="delivery_by">Need By Date *</Label>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            className={cn(
-                              "w-full justify-start text-left font-normal",
-                              !formData.delivery_by && "text-muted-foreground",
-                              errors.delivery_by ? 'border-red-500' : ''
-                            )}
-                          >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {formData.delivery_by ? (
-                              format(formData.delivery_by, "PPP")
-                            ) : (
-                              <span>Select a date</span>
-                            )}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={formData.delivery_by || undefined}
-                            onSelect={handleDateChange}
-                            disabled={(date) => date < new Date()}
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
-                      {errors.delivery_by && (
-                        <p className="text-red-500 text-xs mt-1">{errors.delivery_by}</p>
-                      )}
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="required_by">Required By Date *</Label>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              className={cn(
+                                "w-full justify-start text-left font-normal",
+                                !formData.required_by && "text-muted-foreground",
+                                errors.required_by ? 'border-red-500' : ''
+                              )}
+                            >
+                              <CalendarIcon className="mr-2 h-4 w-4" />
+                              {formData.required_by ? (
+                                format(formData.required_by, "PPP")
+                              ) : (
+                                <span>Select a date</span>
+                              )}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={formData.required_by || undefined}
+                              onSelect={handleDateChange}
+                              disabled={(date) => date < new Date()}
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                        {errors.required_by && (
+                          <p className="text-red-500 text-xs mt-1">{errors.required_by}</p>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>

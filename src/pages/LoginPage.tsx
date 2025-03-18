@@ -71,10 +71,15 @@ const LoginPage: React.FC = () => {
     try {
       setIsLoading(true);
       await login(formData.email, formData.password);
-      toast({
-        title: "Success",
-        description: "You have successfully logged in.",
-      });
+      
+      // If rememberMe is checked, we could set a longer expiration time
+      // for the token in localStorage, but that would require backend support
+      if (formData.rememberMe) {
+        localStorage.setItem('rememberMe', 'true');
+      } else {
+        localStorage.removeItem('rememberMe');
+      }
+      
       navigate(from);
     } catch (error) {
       console.error('Login error:', error);

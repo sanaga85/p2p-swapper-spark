@@ -16,7 +16,7 @@ const SignupPage: React.FC = () => {
   const { toast } = useToast();
   
   const [formData, setFormData] = useState({
-    name: '',
+    fullName: '',
     email: '',
     password: '',
     confirmPassword: '',
@@ -41,8 +41,8 @@ const SignupPage: React.FC = () => {
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
     
-    if (!formData.name.trim()) {
-      newErrors.name = 'Name is required';
+    if (!formData.fullName.trim()) {
+      newErrors.fullName = 'Full name is required';
     }
     
     if (!formData.email.trim()) {
@@ -72,7 +72,7 @@ const SignupPage: React.FC = () => {
     
     try {
       setIsLoading(true);
-      await signup(formData.name, formData.email, formData.password);
+      await signup(formData.fullName, formData.email, formData.password);
       toast({
         title: "Account created",
         description: "You have successfully signed up!",
@@ -153,17 +153,17 @@ const SignupPage: React.FC = () => {
             
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Name</Label>
+                <Label htmlFor="fullName">Full Name</Label>
                 <Input
-                  id="name"
-                  name="name"
+                  id="fullName"
+                  name="fullName"
                   placeholder="John Doe"
-                  value={formData.name}
+                  value={formData.fullName}
                   onChange={handleChange}
-                  className={errors.name ? 'border-red-500' : ''}
+                  className={errors.fullName ? 'border-red-500' : ''}
                 />
-                {errors.name && (
-                  <p className="text-red-500 text-xs mt-1">{errors.name}</p>
+                {errors.fullName && (
+                  <p className="text-red-500 text-xs mt-1">{errors.fullName}</p>
                 )}
               </div>
               

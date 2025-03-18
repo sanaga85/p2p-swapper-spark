@@ -2,12 +2,12 @@
 import React from 'react';
 import { FadeIn } from '@/components/ui/motion';
 
-// Sample stats
+// Sample stats more aligned with the P2P delivery context from the Swagger docs
 const stats = [
-  { value: '100,000+', label: 'Users' },
-  { value: '150+', label: 'Countries' },
+  { value: '100,000+', label: 'Global Users' },
+  { value: '150+', label: 'Countries Served' },
   { value: '500,000+', label: 'Successful Deliveries' },
-  { value: '$25M+', label: 'Saved on Shipping' },
+  { value: '$25M+', label: 'Saved on International Shipping' },
 ];
 
 export const StatsSection: React.FC = () => {

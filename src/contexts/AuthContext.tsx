@@ -1,6 +1,6 @@
 
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { User, authApi } from '@/services/api';
+import { User, authApi, SignupRequest, LoginRequest } from '@/services/api';
 import { useToast } from '@/components/ui/use-toast';
 
 interface AuthContextType {
@@ -8,7 +8,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  signup: (name: string, email: string, password: string) => Promise<void>;
+  signup: (fullName: string, email: string, password: string) => Promise<void>;
   logout: () => void;
   googleAuth: () => Promise<void>;
   facebookAuth: () => Promise<void>;
@@ -42,12 +42,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (email: string, password: string) => {
     try {
       setIsLoading(true);
-      const response = await authApi.login({ email, password });
+      const loginData: LoginRequest = { email, password };
+      const response = await authApi.login(loginData);
       
-      if (response.token && response.user) {
+      if (response.token && response.message) {
         localStorage.setItem('token', response.token);
-        localStorage.setItem('user', JSON.stringify(response.user));
-        setUser(response.user);
+        
+        // Fetch user profile after successful login
+        if (response.user_id) {
+          const userProfile = await authApi.getUserProfile(response.user_id);
+          localStorage.setItem('user', JSON.stringify(userProfile));
+          setUser(userProfile);
+        }
         
         toast({
           title: 'Success',
@@ -66,15 +72,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const signup = async (name: string, email: string, password: string) => {
+  const signup = async (fullName: string, email: string, password: string) => {
     try {
       setIsLoading(true);
-      const response = await authApi.signup({ name, email, password });
+      const signupData: SignupRequest = { full_name: fullName, email, password };
+      const response = await authApi.signup(signupData);
       
-      if (response.token && response.user) {
-        localStorage.setItem('token', response.token);
-        localStorage.setItem('user', JSON.stringify(response.user));
-        setUser(response.user);
+      if (response.user_id) {
+        // After successful signup, login the user
+        await login(email, password);
         
         toast({
           title: 'Account Created',
@@ -107,7 +113,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const googleAuth = async () => {
     try {
       const response = await authApi.googleAuth();
-      window.location.href = response.authUrl;
+      if (response.url) {
+        window.location.href = response.url;
+      }
     } catch (error) {
       console.error('Google auth error:', error);
       toast({
@@ -121,7 +129,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const facebookAuth = async () => {
     try {
       const response = await authApi.facebookAuth();
-      window.location.href = response.authUrl;
+      if (response.url) {
+        window.location.href = response.url;
+      }
     } catch (error) {
       console.error('Facebook auth error:', error);
       toast({

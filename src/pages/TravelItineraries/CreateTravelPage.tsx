@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/contexts/AuthContext';
-import { travelItinerariesApi } from '@/services/api';
+import { travelItinerariesApi, TravelItinerary } from '@/services/api';
 import { FadeIn } from '@/components/ui/motion';
 import { CalendarIcon, Loader2 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
@@ -22,11 +22,12 @@ const CreateTravelPage: React.FC = () => {
   const { toast } = useToast();
   
   const [formData, setFormData] = useState({
-    departure_location: '',
-    arrival_location: '',
+    from_location: '',
+    to_location: '',
     departure_date: null as Date | null,
     arrival_date: null as Date | null,
-    notes: '',
+    available_space: '',
+    preferred_items: '',
   });
   
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -77,12 +78,12 @@ const CreateTravelPage: React.FC = () => {
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
     
-    if (!formData.departure_location.trim()) {
-      newErrors.departure_location = 'Departure location is required';
+    if (!formData.from_location.trim()) {
+      newErrors.from_location = 'From location is required';
     }
     
-    if (!formData.arrival_location.trim()) {
-      newErrors.arrival_location = 'Arrival location is required';
+    if (!formData.to_location.trim()) {
+      newErrors.to_location = 'To location is required';
     }
     
     if (!formData.departure_date) {
@@ -93,6 +94,10 @@ const CreateTravelPage: React.FC = () => {
       newErrors.arrival_date = 'Arrival date is required';
     } else if (formData.departure_date && formData.arrival_date < formData.departure_date) {
       newErrors.arrival_date = 'Arrival date must be after departure date';
+    }
+    
+    if (formData.available_space && isNaN(Number(formData.available_space))) {
+      newErrors.available_space = 'Available space must be a number';
     }
     
     setErrors(newErrors);
@@ -107,16 +112,17 @@ const CreateTravelPage: React.FC = () => {
     try {
       setIsLoading(true);
       
-      const itineraryData = {
-        user_id: user.id,
-        departure_location: formData.departure_location,
-        arrival_location: formData.arrival_location,
+      const itineraryData: Partial<TravelItinerary> = {
+        traveler_id: user.id,
+        from_location: formData.from_location,
+        to_location: formData.to_location,
         departure_date: formData.departure_date?.toISOString() || new Date().toISOString(),
         arrival_date: formData.arrival_date?.toISOString() || new Date().toISOString(),
-        notes: formData.notes,
+        available_space: formData.available_space ? Number(formData.available_space) : undefined,
+        preferred_items: formData.preferred_items || undefined,
       };
       
-      await travelItinerariesApi.create(itineraryData);
+      await travelItinerariesApi.create(itineraryData as any);
       
       toast({
         title: "Travel Posted",
@@ -161,32 +167,32 @@ const CreateTravelPage: React.FC = () => {
                   <div className="grid grid-cols-1 gap-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="departure_location">Departure Location *</Label>
+                        <Label htmlFor="from_location">From Location *</Label>
                         <Input
-                          id="departure_location"
-                          name="departure_location"
+                          id="from_location"
+                          name="from_location"
                           placeholder="e.g., New York, USA"
-                          value={formData.departure_location}
+                          value={formData.from_location}
                           onChange={handleChange}
-                          className={errors.departure_location ? 'border-red-500' : ''}
+                          className={errors.from_location ? 'border-red-500' : ''}
                         />
-                        {errors.departure_location && (
-                          <p className="text-red-500 text-xs mt-1">{errors.departure_location}</p>
+                        {errors.from_location && (
+                          <p className="text-red-500 text-xs mt-1">{errors.from_location}</p>
                         )}
                       </div>
                       
                       <div className="space-y-2">
-                        <Label htmlFor="arrival_location">Arrival Location *</Label>
+                        <Label htmlFor="to_location">To Location *</Label>
                         <Input
-                          id="arrival_location"
-                          name="arrival_location"
+                          id="to_location"
+                          name="to_location"
                           placeholder="e.g., London, UK"
-                          value={formData.arrival_location}
+                          value={formData.to_location}
                           onChange={handleChange}
-                          className={errors.arrival_location ? 'border-red-500' : ''}
+                          className={errors.to_location ? 'border-red-500' : ''}
                         />
-                        {errors.arrival_location && (
-                          <p className="text-red-500 text-xs mt-1">{errors.arrival_location}</p>
+                        {errors.to_location && (
+                          <p className="text-red-500 text-xs mt-1">{errors.to_location}</p>
                         )}
                       </div>
                     </div>
@@ -267,12 +273,28 @@ const CreateTravelPage: React.FC = () => {
                     </div>
                     
                     <div className="space-y-2">
-                      <Label htmlFor="notes">Additional Notes (optional)</Label>
+                      <Label htmlFor="available_space">Available Carrying Space (in cubic inches - optional)</Label>
+                      <Input
+                        id="available_space"
+                        name="available_space"
+                        type="number"
+                        placeholder="e.g., 100"
+                        value={formData.available_space}
+                        onChange={handleChange}
+                        className={errors.available_space ? 'border-red-500' : ''}
+                      />
+                      {errors.available_space && (
+                        <p className="text-red-500 text-xs mt-1">{errors.available_space}</p>
+                      )}
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="preferred_items">Preferred Items (optional)</Label>
                       <Textarea
-                        id="notes"
-                        name="notes"
-                        placeholder="E.g., I can carry small items only, preferred pickup location, etc."
-                        value={formData.notes}
+                        id="preferred_items"
+                        name="preferred_items"
+                        placeholder="E.g., small electronics, clothing, books, etc."
+                        value={formData.preferred_items}
                         onChange={handleChange}
                         className="min-h-32 resize-none"
                       />
