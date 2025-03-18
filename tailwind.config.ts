@@ -53,6 +53,27 @@ export default {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
 				},
+				// Rainbow theme colors
+				rainbow: {
+					red: '#F97316',
+					orange: '#FDBA74',
+					yellow: '#FBBF24',
+					green: '#10B981',
+					blue: '#0EA5E9',
+					indigo: '#6366F1',
+					violet: '#8B5CF6',
+					pink: '#D946EF',
+				},
+				// Pastel colors
+				pastel: {
+					red: '#FEC6A1',
+					green: '#F2FCE2',
+					yellow: '#FEF7CD',
+					blue: '#D3E4FD',
+					purple: '#E5DEFF',
+					pink: '#FFDEE2',
+					peach: '#FDE1D3',
+				}
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
@@ -95,6 +116,18 @@ export default {
 				'float': {
 					'0%, 100%': { transform: 'translateY(0)' },
 					'50%': { transform: 'translateY(-5px)' }
+				},
+				'pulse-rainbow': {
+					'0%, 100%': { 
+						'background-position': '0% 50%',
+					},
+					'50%': { 
+						'background-position': '100% 50%', 
+					},
+				},
+				'spin-slow': {
+					'0%': { transform: 'rotate(0deg)' },
+					'100%': { transform: 'rotate(360deg)' },
 				}
 			},
 			animation: {
@@ -106,7 +139,9 @@ export default {
 				'slide-out': 'slide-out 0.4s ease-out',
 				'scale-in': 'scale-in 0.3s ease-out',
 				'blur-in': 'blur-in 0.4s ease-out',
-				'float': 'float 3s ease-in-out infinite'
+				'float': 'float 3s ease-in-out infinite',
+				'pulse-rainbow': 'pulse-rainbow 8s ease infinite',
+				'spin-slow': 'spin-slow 12s linear infinite',
 			},
 			transitionProperty: {
 				'height': 'height',
@@ -114,6 +149,10 @@ export default {
 			},
 			transitionTimingFunction: {
 				'bounce-ease': 'cubic-bezier(0.34, 1.56, 0.64, 1)',
+			},
+			backgroundImage: {
+				'rainbow-gradient': 'linear-gradient(60deg, #5f2c82, #833ab4, #fd1d1d, #fcb045, #ffdb3a, #3a47d5, #2a0845)',
+				'pastel-gradient': 'linear-gradient(to right, #fec6a1, #fee2d5, #fef7cd, #f2fce2, #d3e4fd, #e5deff, #ffdee2)',
 			}
 		}
 	},

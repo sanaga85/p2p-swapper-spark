@@ -19,6 +19,26 @@ const badgeVariants = cva(
         success: "border-transparent bg-green-500 text-white hover:bg-green-500/80",
         warning: "border-transparent bg-yellow-500 text-white hover:bg-yellow-500/80",
         info: "border-transparent bg-blue-500 text-white hover:bg-blue-500/80",
+        rainbow: 
+          "border-transparent bg-rainbow-gradient text-white animate-pulse-rainbow",
+        violet: 
+          "border-transparent bg-rainbow-violet text-white hover:bg-rainbow-violet/80",
+        pink: 
+          "border-transparent bg-rainbow-pink text-white hover:bg-rainbow-pink/80",
+        red: 
+          "border-transparent bg-rainbow-red text-white hover:bg-rainbow-red/80",
+        orange: 
+          "border-transparent bg-rainbow-orange text-white hover:bg-rainbow-orange/80",
+        yellow: 
+          "border-transparent bg-rainbow-yellow text-black hover:bg-rainbow-yellow/80",
+        green: 
+          "border-transparent bg-rainbow-green text-white hover:bg-rainbow-green/80",
+        blue: 
+          "border-transparent bg-rainbow-blue text-white hover:bg-rainbow-blue/80",
+        indigo: 
+          "border-transparent bg-rainbow-indigo text-white hover:bg-rainbow-indigo/80",
+        pastel: 
+          "border-transparent bg-pastel-gradient text-primary animate-pulse-rainbow",
       },
     },
     defaultVariants: {

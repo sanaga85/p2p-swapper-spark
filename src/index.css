@@ -5,7 +5,7 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
+    --background: 220 100% 97%;
     --foreground: 222 20% 18%;
 
     --card: 0 0% 100%;
@@ -14,16 +14,16 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222 20% 18%;
 
-    --primary: 210 100% 50%;
+    --primary: 255 70% 60%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 40% 96.1%;
+    --secondary: 280 70% 96.1%;
     --secondary-foreground: 222 20% 18%;
 
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
 
-    --accent: 180 100% 45%;
+    --accent: 340 85% 65%;
     --accent-foreground: 222 20% 18%;
 
     --destructive: 0 84.2% 60.2%;
@@ -31,9 +31,9 @@
 
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 210 100% 50%;
+    --ring: 255 70% 60%;
 
-    --radius: 0.75rem;
+    --radius: 1rem;
   }
  
   .dark {
@@ -46,7 +46,7 @@
     --popover: 222 20% 18%;
     --popover-foreground: 210 40% 98%;
  
-    --primary: 210 100% 50%;
+    --primary: 255 70% 60%;
     --primary-foreground: 0 0% 100%;
  
     --secondary: 217.2 32.6% 17.5%;
@@ -55,7 +55,7 @@
     --muted: 217.2 32.6% 17.5%;
     --muted-foreground: 215 20.2% 65.1%;
  
-    --accent: 180 100% 45%;
+    --accent: 340 85% 65%;
     --accent-foreground: 0 0% 100%;
  
     --destructive: 0 62.8% 30.6%;
@@ -63,7 +63,7 @@
  
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 48%;
+    --ring: 255 70% 60%;
   }
 }
 
@@ -80,6 +80,8 @@
   body {
     @apply bg-background text-foreground;
     @apply min-h-screen;
+    background-image: linear-gradient(to bottom right, #fffcdc, #d5fffd, #e1dcff, #ffe8f5);
+    background-attachment: fixed;
   }
   
   /* Smooth scrolling for the entire page */
@@ -94,15 +96,15 @@
   }
   
   ::-webkit-scrollbar-track {
-    @apply bg-secondary/50;
+    @apply bg-secondary/50 rounded-full;
   }
   
   ::-webkit-scrollbar-thumb {
-    @apply bg-primary/30 rounded-full transition-colors;
+    @apply bg-gradient-to-b from-purple-400 via-pink-400 to-blue-400 rounded-full transition-colors;
   }
   
   ::-webkit-scrollbar-thumb:hover {
-    @apply bg-primary/50;
+    @apply bg-gradient-to-b from-purple-500 via-pink-500 to-blue-500;
   }
   
   /* Remove focus outline for mouse users but keep it for keyboard */
@@ -122,11 +124,22 @@
   }
   
   .glass {
-    @apply bg-white/80 backdrop-blur-md border border-white/20 shadow-sm;
+    @apply bg-white/60 backdrop-blur-md border border-white/30 shadow-md;
   }
   
   .glass-card {
-    @apply glass rounded-xl p-6;
+    @apply glass rounded-2xl p-6;
+  }
+  
+  .rainbow-border {
+    @apply relative rounded-xl p-[2px] overflow-hidden;
+    background: linear-gradient(60deg, #5f2c82, #833ab4, #fd1d1d, #fcb045, #ffdb3a, #3a47d5, #2a0845);
+    background-size: 300% 300%;
+    animation: rainbow-border 8s linear infinite;
+  }
+  
+  .rainbow-text {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500;
   }
   
   .page-transition {
@@ -140,10 +153,46 @@
   .input-focus {
     @apply focus:ring-2 focus:ring-primary/30 focus:border-primary transition duration-200;
   }
+
+  .floating {
+    animation: floating 3s ease-in-out infinite;
+  }
+
+  .gradient-card {
+    @apply rounded-xl overflow-hidden relative;
+    background: linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.1) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  }
 }
 
 @layer utilities {
   .text-balance {
     text-wrap: balance;
+  }
+
+  @keyframes rainbow-border {
+    0% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+    100% {
+      background-position: 0% 50%;
+    }
+  }
+
+  @keyframes floating {
+    0% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
+    100% {
+      transform: translateY(0px);
+    }
   }
 }
