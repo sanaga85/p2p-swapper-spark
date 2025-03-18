@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import Layout from "./components/layout/Layout";
 
@@ -18,6 +18,7 @@ import BrowseRequestsPage from "./pages/ShoppingRequests/BrowseRequestsPage";
 import CreateTravelPage from "./pages/TravelItineraries/CreateTravelPage";
 import MyTravelsPage from "./pages/TravelItineraries/MyTravelsPage";
 import NotFound from "./pages/NotFound";
+import Index from "./pages/Index";
 
 const queryClient = new QueryClient();
 
@@ -29,8 +30,12 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <Routes>
+            {/* Root index route */}
+            <Route path="/" element={<Layout><Index /></Layout>} />
+            <Route path="/index" element={<Navigate to="/" replace />} />
+            
             {/* Public routes */}
-            <Route path="/" element={<Layout><HomePage /></Layout>} />
+            <Route path="/home" element={<Layout><HomePage /></Layout>} />
             <Route path="/signup" element={<Layout><SignupPage /></Layout>} />
             <Route path="/login" element={<Layout><LoginPage /></Layout>} />
             <Route path="/browse-requests" element={<Layout><BrowseRequestsPage /></Layout>} />
