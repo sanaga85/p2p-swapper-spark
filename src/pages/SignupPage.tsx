@@ -11,7 +11,15 @@ import { Facebook, Github, Loader2, Mail } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 
 const SignupPage: React.FC = () => {
+  console.log("SignupPage component rendered");
+  
   const { signup, googleAuth, facebookAuth } = useAuth();
+  console.log("Auth context hooks obtained:", { 
+    hasSignup: !!signup, 
+    hasGoogleAuth: !!googleAuth, 
+    hasFacebookAuth: !!facebookAuth 
+  });
+  
   const navigate = useNavigate();
   const { toast } = useToast();
   
@@ -70,21 +78,25 @@ const SignupPage: React.FC = () => {
     console.log("Signup form submitted with data:", formData);
     
     if (!validateForm()) {
-      console.log("Form validation failed:", errors);
+      console.log("Form validation failed, errors:", errors);
       return;
     }
     
     try {
+      console.log("Form validation passed, proceeding with signup");
       setIsLoading(true);
+      
       console.log("Calling signup function with:", formData.fullName, formData.email, formData.password);
       await signup(formData.fullName, formData.email, formData.password);
+      
+      console.log("Signup successful, showing toast and navigating to home");
       toast({
         title: "Account created",
         description: "You have successfully signed up!",
       });
       navigate('/');
     } catch (error) {
-      console.error('Signup error:', error);
+      console.error('Signup error caught in form handler:', error);
       toast({
         title: "Signup Failed",
         description: typeof error === 'string' ? error : "Failed to create account. Please try again.",

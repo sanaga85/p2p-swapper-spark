@@ -170,8 +170,18 @@ export interface Payment {
 
 // Helper function to handle API errors
 const handleApiError = (error: any) => {
-  console.error('API Error:', error);
-  const message = error.message || 'Something went wrong. Please try again.';
+  console.error('API Error Details:', error);
+  let message = 'Something went wrong. Please try again.';
+  
+  if (error.message) {
+    message = error.message;
+    console.error('Error message:', message);
+  }
+  
+  if (error.status) {
+    console.error('Error status:', error.status);
+  }
+  
   toast({
     title: "Error",
     description: message,
@@ -190,19 +200,36 @@ const apiRequest = async (endpoint: string, options?: RequestInit) => {
       ...(options?.headers || {}),
     };
 
-    console.log(`Making ${options?.method || 'GET'} request to: ${API_URL}${endpoint}`);
+    const url = `${API_URL}${endpoint}`;
+    console.log(`Making ${options?.method || 'GET'} request to: ${url}`);
+    console.log('Request headers:', headers);
+    if (options?.body) {
+      console.log('Request body:', options.body);
+    }
     
-    const response = await fetch(`${API_URL}${endpoint}`, {
+    const response = await fetch(url, {
       ...options,
       headers,
     });
 
+    console.log(`Response status: ${response.status} ${response.statusText}`);
+    
     if (!response.ok) {
-      const errorResponse = await response.json();
+      console.error(`API Error: ${response.status} ${response.statusText}`);
+      let errorResponse;
+      try {
+        errorResponse = await response.json();
+        console.error('Error response body:', errorResponse);
+      } catch (e) {
+        console.error('Could not parse error response as JSON');
+        errorResponse = { error: response.statusText };
+      }
       throw { status: response.status, message: errorResponse.error || response.statusText };
     }
 
-    return await response.json();
+    const data = await response.json();
+    console.log('Response data:', data);
+    return data;
   } catch (error) {
     return handleApiError(error);
   }

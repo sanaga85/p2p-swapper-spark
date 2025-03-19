@@ -1,3 +1,4 @@
+
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { User, authApi, SignupRequest, LoginRequest } from '@/services/api';
 import { useToast } from '@/components/ui/use-toast';
@@ -50,6 +51,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log("Attempting login with email:", email);
       
       const loginData: LoginRequest = { email, password };
+      console.log("Login data being sent:", loginData);
+      
       const response = await authApi.login(loginData);
       console.log("Login response:", response);
       
