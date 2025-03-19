@@ -171,7 +171,7 @@ export interface Payment {
 // Helper function to handle API errors
 const handleApiError = (error: any) => {
   console.error('API Error:', error);
-  const message = error.response?.data?.error || 'Something went wrong. Please try again.';
+  const message = error.message || 'Something went wrong. Please try again.';
   toast({
     title: "Error",
     description: message,
@@ -198,8 +198,8 @@ const apiRequest = async (endpoint: string, options?: RequestInit) => {
     });
 
     if (!response.ok) {
-      const error = await response.json();
-      throw error;
+      const errorResponse = await response.json();
+      throw { status: response.status, message: errorResponse.error || response.statusText };
     }
 
     return await response.json();
