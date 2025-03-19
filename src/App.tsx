@@ -23,12 +23,10 @@ import Index from "./pages/Index";
 const queryClient = new QueryClient();
 
 const App = () => (
-  <BrowserRouter>
-    <QueryClientProvider client={queryClient}>
+  <QueryClientProvider client={queryClient}>
+    <BrowserRouter>
       <AuthProvider>
         <TooltipProvider>
-          <Toaster />
-          <Sonner />
           <Routes>
             {/* Root index route */}
             <Route path="/" element={<Layout><Index /></Layout>} />
@@ -50,10 +48,12 @@ const App = () => (
             {/* Catch-all route */}
             <Route path="*" element={<Layout><NotFound /></Layout>} />
           </Routes>
+          <Toaster />
+          <Sonner />
         </TooltipProvider>
       </AuthProvider>
-    </QueryClientProvider>
-  </BrowserRouter>
+    </BrowserRouter>
+  </QueryClientProvider>
 );
 
 export default App;
