@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -120,6 +119,7 @@ const CreateTravelPage: React.FC = () => {
         arrival_date: formData.arrival_date?.toISOString() || new Date().toISOString(),
         available_space: formData.available_space ? Number(formData.available_space) : undefined,
         preferred_items: formData.preferred_items || undefined,
+        available: true,
       };
       
       await travelItinerariesApi.create(itineraryData as any);

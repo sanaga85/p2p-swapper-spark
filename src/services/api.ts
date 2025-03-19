@@ -1,3 +1,4 @@
+
 import { toast } from "@/components/ui/use-toast";
 
 const API_URL = "http://localhost:5000";
@@ -35,8 +36,8 @@ export interface ShoppingRequest {
   price: number;
   seller_location: string;
   required_by: string;
-  proof_of_purchase_url?: string;
-  proof_photo_url?: string;
+  proof_of_purchase_id?: string;
+  proof_photo_id?: string;
   status?: 'pending' | 'accepted' | 'delivered' | 'completed' | 'paid';
   created_at?: string;
 }
@@ -52,7 +53,7 @@ export interface TravelItinerary {
   preferred_items?: string;
   created_at?: string;
   status?: 'active' | 'completed' | 'cancelled';
-  notes?: string;
+  available?: boolean;
 }
 
 export interface TravelItineraryWithScore extends TravelItinerary {
