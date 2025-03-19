@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
@@ -44,7 +43,6 @@ const MyTravelsPage: React.FC = () => {
     fetchItineraries();
   }, [user, toast]);
   
-  // Get counts for different status
   const activeItineraries = itineraries.filter(it => it.status === 'active');
   const completedItineraries = itineraries.filter(it => it.status === 'completed');
   
@@ -188,7 +186,7 @@ const MyTravelsPage: React.FC = () => {
         </TabsContent>
         
         <TabsContent value="completed">
-          {completedRequests.length > 0 ? (
+          {completedItineraries.length > 0 ? (
             <StaggerContainer className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {completedItineraries.map(renderItineraryCard)}
             </StaggerContainer>
