@@ -1,4 +1,3 @@
-
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { User, authApi, SignupRequest, LoginRequest } from '@/services/api';
 import { useToast } from '@/components/ui/use-toast';
@@ -26,14 +25,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const token = localStorage.getItem('token');
     const userData = localStorage.getItem('user');
     
+    console.log("AuthProvider mounted, checking localStorage for user data");
+    
     if (token && userData) {
       try {
-        setUser(JSON.parse(userData));
+        const parsedUser = JSON.parse(userData);
+        console.log("Found user data in localStorage:", parsedUser);
+        setUser(parsedUser);
       } catch (error) {
         console.error('Failed to parse user data', error);
         localStorage.removeItem('token');
         localStorage.removeItem('user');
       }
+    } else {
+      console.log("No user data found in localStorage");
     }
     
     setIsLoading(false);
@@ -42,23 +47,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (email: string, password: string) => {
     try {
       setIsLoading(true);
+      console.log("Attempting login with email:", email);
+      
       const loginData: LoginRequest = { email, password };
       const response = await authApi.login(loginData);
+      console.log("Login response:", response);
       
-      if (response.token && response.message) {
+      if (response.token && response.user_id) {
         localStorage.setItem('token', response.token);
+        console.log("Token saved to localStorage");
         
         // Fetch user profile after successful login
-        if (response.user_id) {
-          const userProfile = await authApi.getUserProfile(response.user_id);
-          localStorage.setItem('user', JSON.stringify(userProfile));
-          setUser(userProfile);
-        }
+        console.log("Fetching user profile for ID:", response.user_id);
+        const userProfile = await authApi.getUserProfile(response.user_id);
+        console.log("User profile:", userProfile);
+        
+        localStorage.setItem('user', JSON.stringify(userProfile));
+        setUser(userProfile);
         
         toast({
           title: 'Success',
           description: 'You have successfully logged in.',
         });
+      } else {
+        console.error("Login response missing token or user_id:", response);
+        throw new Error("Invalid login response from server");
       }
     } catch (error) {
       console.error('Login error:', error);
@@ -67,6 +80,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         description: 'Please check your credentials and try again.',
         variant: 'destructive',
       });
+      throw error;
     } finally {
       setIsLoading(false);
     }
@@ -75,10 +89,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signup = async (fullName: string, email: string, password: string) => {
     try {
       setIsLoading(true);
+      console.log("Starting signup process with:", { fullName, email });
+      
       const signupData: SignupRequest = { full_name: fullName, email, password };
+      console.log("Sending signup request with data:", signupData);
+      
       const response = await authApi.signup(signupData);
+      console.log("Signup response:", response);
       
       if (response.user_id) {
+        console.log("Signup successful, proceeding to login");
         // After successful signup, login the user
         await login(email, password);
         
@@ -86,14 +106,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           title: 'Account Created',
           description: 'Your account has been successfully created.',
         });
+      } else {
+        console.error("Signup response missing user_id:", response);
+        throw new Error("Invalid signup response from server");
       }
     } catch (error) {
-      console.error('Signup error:', error);
+      console.error('Signup error details:', error);
       toast({
         title: 'Signup Failed',
         description: 'There was an error creating your account. Please try again.',
         variant: 'destructive',
       });
+      throw error;
     } finally {
       setIsLoading(false);
     }

@@ -67,11 +67,16 @@ const SignupPage: React.FC = () => {
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("Signup form submitted with data:", formData);
     
-    if (!validateForm()) return;
+    if (!validateForm()) {
+      console.log("Form validation failed:", errors);
+      return;
+    }
     
     try {
       setIsLoading(true);
+      console.log("Calling signup function with:", formData.fullName, formData.email, formData.password);
       await signup(formData.fullName, formData.email, formData.password);
       toast({
         title: "Account created",
@@ -80,6 +85,11 @@ const SignupPage: React.FC = () => {
       navigate('/');
     } catch (error) {
       console.error('Signup error:', error);
+      toast({
+        title: "Signup Failed",
+        description: typeof error === 'string' ? error : "Failed to create account. Please try again.",
+        variant: "destructive"
+      });
     } finally {
       setIsLoading(false);
     }
