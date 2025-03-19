@@ -1,7 +1,10 @@
-
 import { toast } from "@/components/ui/use-toast";
 
-const API_URL = "http://localhost:5000";
+// Define the API URL based on the environment
+// You can change this to your actual backend URL
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
+console.log("Using API URL:", API_URL);
 
 // Types for our API based on the OpenAPI specification
 export interface User {
@@ -174,7 +177,7 @@ const handleApiError = (error: any) => {
   return Promise.reject(error);
 };
 
-// API request handler
+// API request handler with error handling and authentication
 const apiRequest = async (endpoint: string, options?: RequestInit) => {
   try {
     const token = localStorage.getItem('token');
@@ -184,6 +187,8 @@ const apiRequest = async (endpoint: string, options?: RequestInit) => {
       ...(options?.headers || {}),
     };
 
+    console.log(`Making ${options?.method || 'GET'} request to: ${API_URL}${endpoint}`);
+    
     const response = await fetch(`${API_URL}${endpoint}`, {
       ...options,
       headers,
