@@ -1,8 +1,11 @@
+
 import { toast } from "@/components/ui/use-toast";
 
 // Define the API URL based on the environment
-// You can change this to your actual backend URL
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+const API_URL = import.meta.env.VITE_API_URL;
+if (!API_URL) {
+  console.warn("⚠️ VITE_API_URL is not defined! Please set it in your .env file");
+}
 
 console.log("Using API URL:", API_URL);
 
