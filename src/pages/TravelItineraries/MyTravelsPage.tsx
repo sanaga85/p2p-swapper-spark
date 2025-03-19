@@ -71,9 +71,9 @@ const MyTravelsPage: React.FC = () => {
         <CardHeader className="pb-2">
           <div className="flex justify-between items-start">
             <CardTitle className="text-lg font-semibold">
-              {itinerary.departure_location} to {itinerary.arrival_location}
+              {itinerary.from_location} to {itinerary.to_location}
             </CardTitle>
-            {getStatusBadge(itinerary.status)}
+            {getStatusBadge(itinerary.status || 'active')}
           </div>
         </CardHeader>
         <CardContent className="pb-4">
@@ -88,14 +88,14 @@ const MyTravelsPage: React.FC = () => {
             <div className="flex items-center">
               <MapPin className="h-4 w-4 mr-2 text-muted-foreground" />
               <span>
-                {itinerary.departure_location} → {itinerary.arrival_location}
+                {itinerary.from_location} → {itinerary.to_location}
               </span>
             </div>
           </div>
           
-          {itinerary.notes && (
+          {itinerary.preferred_items && (
             <p className="text-sm text-muted-foreground line-clamp-2">
-              {itinerary.notes}
+              {itinerary.preferred_items}
             </p>
           )}
         </CardContent>
@@ -188,7 +188,7 @@ const MyTravelsPage: React.FC = () => {
         </TabsContent>
         
         <TabsContent value="completed">
-          {completedItineraries.length > 0 ? (
+          {completedRequests.length > 0 ? (
             <StaggerContainer className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {completedItineraries.map(renderItineraryCard)}
             </StaggerContainer>

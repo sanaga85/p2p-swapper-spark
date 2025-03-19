@@ -45,22 +45,22 @@ const MyRequestsPage: React.FC = () => {
   }, [user, toast]);
   
   // Get counts for different status
-  const openRequests = requests.filter(req => req.status === 'open');
-  const matchedRequests = requests.filter(req => req.status === 'matched' || req.status === 'in_progress');
-  const completedRequests = requests.filter(req => req.status === 'completed');
+  const pendingRequests = requests.filter(req => req.status === 'pending');
+  const inProgressRequests = requests.filter(req => req.status === 'accepted' || req.status === 'delivered');
+  const completedRequests = requests.filter(req => req.status === 'completed' || req.status === 'paid');
   
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'open':
-        return <Badge variant="secondary">Open</Badge>;
-      case 'matched':
-        return <Badge variant="info">Matched</Badge>;
-      case 'in_progress':
-        return <Badge variant="warning">In Progress</Badge>;
+      case 'pending':
+        return <Badge variant="secondary">Pending</Badge>;
+      case 'accepted':
+        return <Badge variant="info">Accepted</Badge>;
+      case 'delivered':
+        return <Badge variant="warning">Delivered</Badge>;
       case 'completed':
         return <Badge variant="success">Completed</Badge>;
-      case 'cancelled':
-        return <Badge variant="destructive">Cancelled</Badge>;
+      case 'paid':
+        return <Badge variant="success">Paid</Badge>;
       default:
         return <Badge>{status}</Badge>;
     }
@@ -75,31 +75,30 @@ const MyRequestsPage: React.FC = () => {
       <Card className="h-full card-hover">
         <CardHeader className="pb-2">
           <div className="flex justify-between items-start">
-            <CardTitle className="text-lg font-semibold">{request.item_name}</CardTitle>
-            {getStatusBadge(request.status)}
+            <CardTitle className="text-lg font-semibold">{request.product_name}</CardTitle>
+            {getStatusBadge(request.status || 'pending')}
           </div>
         </CardHeader>
         <CardContent className="pb-4">
           <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-            {request.item_description}
+            {request.category}
           </p>
           
           <div className="space-y-2 text-sm">
             <div className="flex items-center">
               <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
-              <span>Needed by: {formatDate(request.delivery_by_date)}</span>
+              <span>Needed by: {formatDate(request.required_by)}</span>
             </div>
             
             <div className="flex items-center">
               <MapPin className="h-4 w-4 mr-2 text-muted-foreground" />
-              <span>From {request.shipping_from} to {request.shipping_to}</span>
+              <span>From {request.seller_location}</span>
             </div>
             
             <div className="flex items-center">
               <DollarSign className="h-4 w-4 mr-2 text-muted-foreground" />
               <span>
-                Item: ${request.item_price.toFixed(2)} | 
-                Reward: ${request.reward_amount.toFixed(2)}
+                Item: ${request.price.toFixed(2)}
               </span>
             </div>
           </div>
@@ -162,11 +161,11 @@ const MyRequestsPage: React.FC = () => {
           <TabsTrigger value="all">
             All ({requests.length})
           </TabsTrigger>
-          <TabsTrigger value="open">
-            Open ({openRequests.length})
+          <TabsTrigger value="pending">
+            Pending ({pendingRequests.length})
           </TabsTrigger>
-          <TabsTrigger value="matched">
-            In Progress ({matchedRequests.length})
+          <TabsTrigger value="in-progress">
+            In Progress ({inProgressRequests.length})
           </TabsTrigger>
           <TabsTrigger value="completed">
             Completed ({completedRequests.length})
@@ -183,22 +182,22 @@ const MyRequestsPage: React.FC = () => {
           )}
         </TabsContent>
         
-        <TabsContent value="open">
-          {openRequests.length > 0 ? (
+        <TabsContent value="pending">
+          {pendingRequests.length > 0 ? (
             <StaggerContainer className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {openRequests.map(renderRequestCard)}
+              {pendingRequests.map(renderRequestCard)}
             </StaggerContainer>
           ) : (
             <div className="text-center py-12">
-              <p className="text-muted-foreground">No open requests</p>
+              <p className="text-muted-foreground">No pending requests</p>
             </div>
           )}
         </TabsContent>
         
-        <TabsContent value="matched">
-          {matchedRequests.length > 0 ? (
+        <TabsContent value="in-progress">
+          {inProgressRequests.length > 0 ? (
             <StaggerContainer className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {matchedRequests.map(renderRequestCard)}
+              {inProgressRequests.map(renderRequestCard)}
             </StaggerContainer>
           ) : (
             <div className="text-center py-12">

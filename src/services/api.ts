@@ -52,6 +52,7 @@ export interface TravelItinerary {
   preferred_items?: string;
   created_at?: string;
   status?: 'active' | 'completed' | 'cancelled';
+  notes?: string;
 }
 
 export interface TravelItineraryWithScore extends TravelItinerary {

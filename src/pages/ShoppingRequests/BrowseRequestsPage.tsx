@@ -16,68 +16,57 @@ const BrowseRequestsPage: React.FC = () => {
   const mockRequests: ShoppingRequest[] = [
     {
       id: '1',
-      user_id: 'user1',
-      item_name: 'Limited Edition Nike Sneakers',
-      item_description: 'Looking for the 2023 limited edition Nike Air Jordan release only available in the US.',
-      item_url: 'https://example.com/product',
-      item_price: 199.99,
-      delivery_by_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-      shipping_from: 'New York, USA',
-      shipping_to: 'London, UK',
-      reward_amount: 50,
-      status: 'open',
+      shopper_id: 'user1',
+      product_name: 'Limited Edition Nike Sneakers',
+      category: 'Clothing & Accessories',
+      price: 199.99,
+      required_by: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+      seller_location: 'New York, USA',
+      status: 'pending',
       created_at: new Date().toISOString(),
     },
     {
       id: '2',
-      user_id: 'user2',
-      item_name: 'Japanese Skincare Products',
-      item_description: 'Need authentic Japanese SK-II facial treatment essence and Shiseido moisturizer.',
-      item_price: 120,
-      delivery_by_date: new Date(Date.now() + 45 * 24 * 60 * 60 * 1000).toISOString(),
-      shipping_from: 'Tokyo, Japan',
-      shipping_to: 'Sydney, Australia',
-      reward_amount: 30,
-      status: 'open',
+      shopper_id: 'user2',
+      product_name: 'Japanese Skincare Products',
+      category: 'Beauty & Health',
+      price: 120,
+      required_by: new Date(Date.now() + 45 * 24 * 60 * 60 * 1000).toISOString(),
+      seller_location: 'Tokyo, Japan',
+      status: 'pending',
       created_at: new Date().toISOString(),
     },
     {
       id: '3',
-      user_id: 'user3',
-      item_name: 'German Chocolate Assortment',
-      item_description: 'Looking for an assortment of German chocolates including Ritter Sport varieties not available internationally.',
-      item_price: 50,
-      delivery_by_date: new Date(Date.now() + 20 * 24 * 60 * 60 * 1000).toISOString(),
-      shipping_from: 'Berlin, Germany',
-      shipping_to: 'Toronto, Canada',
-      reward_amount: 25,
-      status: 'open',
+      shopper_id: 'user3',
+      product_name: 'German Chocolate Assortment',
+      category: 'Food & Beverages',
+      price: 50,
+      required_by: new Date(Date.now() + 20 * 24 * 60 * 60 * 1000).toISOString(),
+      seller_location: 'Berlin, Germany',
+      status: 'pending',
       created_at: new Date().toISOString(),
     },
     {
       id: '4',
-      user_id: 'user4',
-      item_name: 'Luxury Italian Leather Bag',
-      item_description: 'Looking for a specific model of leather handbag only available in Milan boutiques.',
-      item_price: 450,
-      delivery_by_date: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(),
-      shipping_from: 'Milan, Italy',
-      shipping_to: 'Dubai, UAE',
-      reward_amount: 100,
-      status: 'open',
+      shopper_id: 'user4',
+      product_name: 'Luxury Italian Leather Bag',
+      category: 'Luxury Goods',
+      price: 450,
+      required_by: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(),
+      seller_location: 'Milan, Italy',
+      status: 'pending',
       created_at: new Date().toISOString(),
     },
     {
       id: '5',
-      user_id: 'user5',
-      item_name: 'Limited Edition Scotch Whisky',
-      item_description: 'Looking for a 25-year-old limited release Scotch only available at the distillery in Scotland.',
-      item_price: 350,
-      delivery_by_date: new Date(Date.now() + 40 * 24 * 60 * 60 * 1000).toISOString(),
-      shipping_from: 'Edinburgh, Scotland',
-      shipping_to: 'Singapore',
-      reward_amount: 80,
-      status: 'open',
+      shopper_id: 'user5',
+      product_name: 'Limited Edition Scotch Whisky',
+      category: 'Alcoholic Beverages',
+      price: 350,
+      required_by: new Date(Date.now() + 40 * 24 * 60 * 60 * 1000).toISOString(),
+      seller_location: 'Edinburgh, Scotland',
+      status: 'pending',
       created_at: new Date().toISOString(),
     },
   ];
@@ -89,14 +78,14 @@ const BrowseRequestsPage: React.FC = () => {
   // Filter requests based on search term and filters
   const filteredRequests = mockRequests.filter(request => {
     const matchesSearch = searchTerm === '' || 
-      request.item_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      request.item_description.toLowerCase().includes(searchTerm.toLowerCase());
+      request.product_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (request.category && request.category.toLowerCase().includes(searchTerm.toLowerCase()));
     
     const matchesOrigin = originFilter === '' || 
-      request.shipping_from.toLowerCase().includes(originFilter.toLowerCase());
+      request.seller_location.toLowerCase().includes(originFilter.toLowerCase());
     
-    const matchesDestination = destinationFilter === '' || 
-      request.shipping_to.toLowerCase().includes(destinationFilter.toLowerCase());
+    // Note: In the real implementation, we might need a destination field in the shopping request
+    const matchesDestination = destinationFilter === '' || true;
     
     return matchesSearch && matchesOrigin && matchesDestination;
   });
@@ -110,31 +99,31 @@ const BrowseRequestsPage: React.FC = () => {
       <Card className="h-full card-hover">
         <CardHeader className="pb-2">
           <div className="flex justify-between items-start">
-            <CardTitle className="text-lg font-semibold">{request.item_name}</CardTitle>
+            <CardTitle className="text-lg font-semibold">{request.product_name}</CardTitle>
             <Badge variant="secondary">
-              ${request.reward_amount.toFixed(0)} Reward
+              ${(request.price * 0.1).toFixed(0)} Reward
             </Badge>
           </div>
         </CardHeader>
         <CardContent className="pb-4">
           <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-            {request.item_description}
+            {request.category}
           </p>
           
           <div className="space-y-2 text-sm">
             <div className="flex items-center">
               <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
-              <span>Needed by: {formatDate(request.delivery_by_date)}</span>
+              <span>Needed by: {formatDate(request.required_by)}</span>
             </div>
             
             <div className="flex items-center">
               <MapPin className="h-4 w-4 mr-2 text-muted-foreground" />
-              <span>From {request.shipping_from} to {request.shipping_to}</span>
+              <span>From {request.seller_location}</span>
             </div>
             
             <div className="flex items-center">
               <DollarSign className="h-4 w-4 mr-2 text-muted-foreground" />
-              <span>Item value: ${request.item_price.toFixed(2)}</span>
+              <span>Item value: ${request.price.toFixed(2)}</span>
             </div>
           </div>
         </CardContent>
@@ -164,7 +153,7 @@ const BrowseRequestsPage: React.FC = () => {
               <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
               <Input
                 id="search"
-                placeholder="Search by item name or description"
+                placeholder="Search by product name or category"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
@@ -183,7 +172,7 @@ const BrowseRequestsPage: React.FC = () => {
           </div>
           
           <div>
-            <Label htmlFor="destination" className="mb-2 block">Destination</Label>
+            <Label htmlFor="destination" className="mb-2 block">Your Location</Label>
             <Input
               id="destination"
               placeholder="e.g., London, UK"
