@@ -1,23 +1,27 @@
-
+/* Root container styles */
 #root {
   width: 100%;
   margin: 0 auto;
   text-align: center;
 }
 
+/* Logo styles */
 .logo {
-  height: 6em;
-  padding: 1.5em;
+  height: 6rem; /* Use rem for better scalability */
+  padding: 1.5rem;
   will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em rgba(100, 108, 255, 0.8));
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em rgba(97, 218, 251, 0.8));
+  transition: filter 300ms ease;
 }
 
+.logo:hover {
+  filter: drop-shadow(0 0 2rem rgba(100, 108, 255, 0.8));
+}
+
+.logo.react:hover {
+  filter: drop-shadow(0 0 2rem rgba(97, 218, 251, 0.8));
+}
+
+/* Logo animation */
 @keyframes logo-spin {
   from {
     transform: rotate(0deg);
@@ -33,22 +37,37 @@
   }
 }
 
+/* Rainbow button styles */
 .rainbow-button {
-  background: linear-gradient(45deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #8f00ff);
+  background: linear-gradient(
+    45deg,
+    #ff0000,
+    #ff7f00,
+    #ffff00,
+    #00ff00,
+    #0000ff,
+    #4b0082,
+    #8f00ff
+  );
   background-size: 400% 400%;
   animation: rainbow-shift 10s ease infinite;
-  color: white;
-  font-weight: bold;
+  color: #ffffff;
+  font-weight: 700;
   border-radius: 8px;
   padding: 10px 20px;
   border: none;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
 }
 
 .rainbow-button:hover {
   box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
   transform: translateY(-2px);
+}
+
+.rainbow-button:focus {
+  outline: 3px solid #4b0082;
+  outline-offset: 2px;
 }
 
 @keyframes rainbow-shift {
@@ -63,6 +82,7 @@
   }
 }
 
+/* Rainbow text styles */
 .rainbow-text {
   background-image: linear-gradient(
     to right,
@@ -74,8 +94,8 @@
     #4b0082,
     #8f00ff
   );
-  -webkit-background-clip: text;
   background-clip: text;
+  -webkit-background-clip: text;
   color: transparent;
   background-size: 200% auto;
   animation: rainbow-text-animation 6s linear infinite;
@@ -87,14 +107,15 @@
   }
 }
 
+/* Card styles */
 .card {
-  padding: 2em;
+  padding: 2rem;
   border-radius: 16px;
   background: rgba(255, 255, 255, 0.7);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.3);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .card:hover {
@@ -102,24 +123,65 @@
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
 }
 
+/* Glow effect */
 .glow {
   box-shadow: 0 0 15px rgba(149, 128, 255, 0.7);
+  transition: box-shadow 0.3s ease;
 }
 
 .glow:hover {
   box-shadow: 0 0 25px rgba(149, 128, 255, 0.9);
 }
 
+/* Glass card styles */
 .glass-card {
   background: rgba(255, 255, 255, 0.25);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   border-radius: 16px;
   border: 1px solid rgba(255, 255, 255, 0.18);
-  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+  box-shadow: 0 8px 32px rgba(31, 38, 135, 0.1);
+  transition: background 0.3s ease, box-shadow 0.3s ease;
 }
 
 .glass-card:hover {
   background: rgba(255, 255, 255, 0.35);
-  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.2);
+  box-shadow: 0 8px 32px rgba(31, 38, 135, 0.2);
+}
+
+/* Ensure accessibility for reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .rainbow-button,
+  .rainbow-text,
+  a:nth-of-type(2) .logo {
+    animation: none;
+  }
+
+  .card,
+  .rainbow-button,
+  .glow,
+  .glass-card {
+    transition: none;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .rainbow-button {
+    background: #000000;
+    color: #ffffff;
+    border: 2px solid #ffffff;
+  }
+
+  .rainbow-text {
+    background-image: none;
+    color: #ffffff;
+  }
+
+  .card,
+  .glass-card {
+    background: #ffffff;
+    border: 2px solid #000000;
+    box-shadow: none;
+  }
 }

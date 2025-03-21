@@ -1,139 +1,174 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { FadeIn, SlideIn } from '@/components/ui/motion';
+import { FadeIn } from '@/components/ui/motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
-import { Facebook, Github, Loader2, Mail } from 'lucide-react';
+import { Facebook, Loader2, AlertCircle } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+import { Helmet } from 'react-helmet-async'; // For SEO
 
 const SignupPage: React.FC = () => {
-  console.log("SignupPage component rendered");
-  
-  const { signup, googleAuth, facebookAuth } = useAuth();
-  console.log("Auth context hooks obtained:", { 
-    hasSignup: !!signup, 
-    hasGoogleAuth: !!googleAuth, 
-    hasFacebookAuth: !!facebookAuth 
-  });
-  
+  const { signup, googleAuth, facebookAuth, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  
+
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
     password: '',
     confirmPassword: '',
   });
-  
+
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
-  
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/', { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
+
+  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-    // Clear error when user starts typing in a field
+    // Sanitize input to prevent XSS
+    const sanitizedValue = value.replace(/[<>{}]/g, '');
+    setFormData((prev) => ({ ...prev, [name]: sanitizedValue }));
     if (errors[name]) {
-      setErrors(prev => {
+      setErrors((prev) => {
         const newErrors = { ...prev };
         delete newErrors[name];
         return newErrors;
       });
     }
-  };
-  
-  const validateForm = () => {
+  }, [errors]);
+
+  const validateForm = useCallback(() => {
     const newErrors: Record<string, string> = {};
-    
+
     if (!formData.fullName.trim()) {
       newErrors.fullName = 'Full name is required';
+    } else if (formData.fullName.length > 100) {
+      newErrors.fullName = 'Full name cannot exceed 100 characters';
     }
-    
+
     if (!formData.email.trim()) {
       newErrors.email = 'Email is required';
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = 'Email is invalid';
+    } else if (formData.email.length > 255) {
+      newErrors.email = 'Email cannot exceed 255 characters';
     }
-    
+
     if (!formData.password) {
       newErrors.password = 'Password is required';
-    } else if (formData.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
+    } else if (formData.password.length < 8) {
+      newErrors.password = 'Password must be at least 8 characters';
+    } else if (formData.password.length > 128) {
+      newErrors.password = 'Password cannot exceed 128 characters';
     }
-    
+
     if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = 'Passwords do not match';
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  };
-  
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log("Signup form submitted with data:", formData);
-    
-    if (!validateForm()) {
-      console.log("Form validation failed, errors:", errors);
-      return;
-    }
-    
+  }, [formData]);
+
+  const handleSubmit = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+
+      if (!validateForm()) return;
+
+      try {
+        setIsLoading(true);
+        await signup(formData.fullName, formData.email, formData.password);
+
+        toast({
+          title: 'Account Created',
+          description: 'You have successfully signed up! Welcome to Grabr.io.',
+        });
+
+        navigate('/', { replace: true });
+      } catch (error: any) {
+        const errorMessage =
+          error.message || 'Failed to create account. Please try again.';
+        toast({
+          title: 'Signup Failed',
+          description: errorMessage,
+          variant: 'destructive',
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [formData, validateForm, signup, navigate, toast]
+  );
+
+  const handleGoogleAuth = useCallback(async () => {
     try {
-      console.log("Form validation passed, proceeding with signup");
       setIsLoading(true);
-      
-      console.log("Calling signup function with:", formData.fullName, formData.email, formData.password);
-      await signup(formData.fullName, formData.email, formData.password);
-      
-      console.log("Signup successful, showing toast and navigating to home");
+      await googleAuth();
+      // Navigation is handled by the redirect from the backend
+    } catch (error: any) {
       toast({
-        title: "Account created",
-        description: "You have successfully signed up!",
-      });
-      navigate('/');
-    } catch (error) {
-      console.error('Signup error caught in form handler:', error);
-      toast({
-        title: "Signup Failed",
-        description: typeof error === 'string' ? error : "Failed to create account. Please try again.",
-        variant: "destructive"
+        title: 'Error',
+        description: error.message || 'Failed to authenticate with Google.',
+        variant: 'destructive',
       });
     } finally {
       setIsLoading(false);
     }
-  };
-  
-  const handleGoogleAuth = async () => {
+  }, [googleAuth, toast]);
+
+  const handleFacebookAuth = useCallback(async () => {
     try {
-      await googleAuth();
-    } catch (error) {
-      console.error('Google auth error:', error);
-    }
-  };
-  
-  const handleFacebookAuth = async () => {
-    try {
+      setIsLoading(true);
       await facebookAuth();
-    } catch (error) {
-      console.error('Facebook auth error:', error);
+      // Navigation is handled by the redirect from the backend
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to authenticate with Facebook.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
     }
-  };
-  
+  }, [facebookAuth, toast]);
+
   return (
     <div className="min-h-screen flex items-center justify-center p-4 pt-20">
+      {/* SEO Optimization */}
+      <Helmet>
+        <title>Sign Up - Grabr.io</title>
+        <meta
+          name="description"
+          content="Sign up for Grabr.io to connect with travelers, shop globally, or earn money by delivering items."
+        />
+        <meta name="robots" content="noindex, nofollow" />
+        <link rel="canonical" href="https://www.grabr.io/signup" />
+      </Helmet>
+
       <FadeIn className="w-full max-w-md">
         <Card className="w-full shadow-lg border-border/50 overflow-hidden">
           <CardHeader className="space-y-1 text-center">
-            <CardTitle className="text-2xl font-bold">Create an account</CardTitle>
+            <CardTitle className="text-2xl font-bold">Create an Account</CardTitle>
           </CardHeader>
-          
+
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
-              <Button variant="outline" className="w-full" onClick={handleGoogleAuth}>
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={handleGoogleAuth}
+                disabled={isLoading}
+              >
                 <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
                   <path
                     d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -155,13 +190,18 @@ const SignupPage: React.FC = () => {
                 </svg>
                 Google
               </Button>
-              
-              <Button variant="outline" className="w-full" onClick={handleFacebookAuth}>
+
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={handleFacebookAuth}
+                disabled={isLoading}
+              >
                 <Facebook className="mr-2 h-4 w-4 text-blue-600" />
                 Facebook
               </Button>
             </div>
-            
+
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
                 <span className="w-full border-t" />
@@ -172,7 +212,7 @@ const SignupPage: React.FC = () => {
                 </span>
               </div>
             </div>
-            
+
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="fullName">Full Name</Label>
@@ -183,12 +223,18 @@ const SignupPage: React.FC = () => {
                   value={formData.fullName}
                   onChange={handleChange}
                   className={errors.fullName ? 'border-red-500' : ''}
+                  autoComplete="name"
+                  maxLength={100}
+                  disabled={isLoading}
                 />
                 {errors.fullName && (
-                  <p className="text-red-500 text-xs mt-1">{errors.fullName}</p>
+                  <p className="text-red-500 text-xs mt-1 flex items-center">
+                    <AlertCircle className="h-4 w-4 mr-1" />
+                    {errors.fullName}
+                  </p>
                 )}
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
@@ -199,12 +245,18 @@ const SignupPage: React.FC = () => {
                   value={formData.email}
                   onChange={handleChange}
                   className={errors.email ? 'border-red-500' : ''}
+                  autoComplete="email"
+                  maxLength={255}
+                  disabled={isLoading}
                 />
                 {errors.email && (
-                  <p className="text-red-500 text-xs mt-1">{errors.email}</p>
+                  <p className="text-red-500 text-xs mt-1 flex items-center">
+                    <AlertCircle className="h-4 w-4 mr-1" />
+                    {errors.email}
+                  </p>
                 )}
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
                 <Input
@@ -214,12 +266,18 @@ const SignupPage: React.FC = () => {
                   value={formData.password}
                   onChange={handleChange}
                   className={errors.password ? 'border-red-500' : ''}
+                  autoComplete="new-password"
+                  maxLength={128}
+                  disabled={isLoading}
                 />
                 {errors.password && (
-                  <p className="text-red-500 text-xs mt-1">{errors.password}</p>
+                  <p className="text-red-500 text-xs mt-1 flex items-center">
+                    <AlertCircle className="h-4 w-4 mr-1" />
+                    {errors.password}
+                  </p>
                 )}
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="confirmPassword">Confirm Password</Label>
                 <Input
@@ -229,44 +287,46 @@ const SignupPage: React.FC = () => {
                   value={formData.confirmPassword}
                   onChange={handleChange}
                   className={errors.confirmPassword ? 'border-red-500' : ''}
+                  autoComplete="new-password"
+                  maxLength={128}
+                  disabled={isLoading}
                 />
                 {errors.confirmPassword && (
-                  <p className="text-red-500 text-xs mt-1">{errors.confirmPassword}</p>
+                  <p className="text-red-500 text-xs mt-1 flex items-center">
+                    <AlertCircle className="h-4 w-4 mr-1" />
+                    {errors.confirmPassword}
+                  </p>
                 )}
               </div>
-              
-              <Button 
-                type="submit" 
-                className="w-full" 
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Creating account...
-                  </>
-                ) : (
-                  'Sign Up'
-                )}
-              </Button>
+
+              <Button type="submit" className="w-full rainbow-button" disabled={isLoading}>
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Creating account...
+                    </>
+                  ) : (
+                    'Sign Up'
+                  )}
+               </Button>
             </form>
           </CardContent>
-          
+
           <CardFooter className="flex flex-col space-y-4">
             <div className="text-center text-sm text-muted-foreground">
-              By clicking continue, you agree to our{" "}
+              By clicking continue, you agree to our{' '}
               <Link to="/terms" className="underline underline-offset-4 hover:text-primary">
                 Terms of Service
-              </Link>{" "}
-              and{" "}
+              </Link>{' '}
+              and{' '}
               <Link to="/privacy" className="underline underline-offset-4 hover:text-primary">
                 Privacy Policy
               </Link>
               .
             </div>
-            
+
             <div className="text-center text-sm">
-              Already have an account?{" "}
+              Already have an account?{' '}
               <Link to="/login" className="text-primary hover:underline">
                 Log in
               </Link>

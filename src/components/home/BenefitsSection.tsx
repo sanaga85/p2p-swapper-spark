@@ -1,57 +1,34 @@
-
+// src/components/home/BenefitsSection.tsx
 import React from 'react';
-import { ShoppingBag, Plane, CreditCard, Shield } from 'lucide-react';
-import { FadeIn, StaggerContainer } from '@/components/ui/motion';
-
-// Sample benefits
-const benefits = [
-  {
-    icon: <ShoppingBag className="h-6 w-6 text-primary" />,
-    title: 'Get Hard-to-Find Items',
-    description: 'Access products that are unavailable or overpriced in your country.',
-  },
-  {
-    icon: <Plane className="h-6 w-6 text-primary" />,
-    title: 'Travel & Earn',
-    description: 'Make extra money by delivering items during your travels.',
-  },
-  {
-    icon: <CreditCard className="h-6 w-6 text-primary" />,
-    title: 'Secure Payments',
-    description: 'Your money is protected with our secure escrow system.',
-  },
-  {
-    icon: <Shield className="h-6 w-6 text-primary" />,
-    title: 'Safe & Trusted',
-    description: 'Verified users and reviews ensure trust in every transaction.',
-  },
-];
+import { Globe, Shield, Wallet } from 'lucide-react';
 
 export const BenefitsSection: React.FC = () => {
   return (
-    <section className="py-20 bg-secondary/50">
+    <section className="py-16 bg-gray-50">
       <div className="container mx-auto px-4">
-        <FadeIn>
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Why Choose Sparrow</h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
-              We're revolutionizing the way people shop globally and travel with purpose.
+        <h2 className="text-3xl font-bold text-center mb-12">Why Choose Us?</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="text-center">
+            <Globe className="h-12 w-12 mx-auto text-primary mb-4" />
+            <h3 className="text-xl font-semibold mb-2">Global Access</h3>
+            <p className="text-muted-foreground">
+              Shop unique products from anywhere in the world.
             </p>
           </div>
-        </FadeIn>
-
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-          <StaggerContainer>
-            {benefits.map((benefit, index) => (
-              <FadeIn key={index} delay={index * 0.1} className="flex flex-col items-center text-center p-6">
-                <div className="mb-4 p-3 bg-white rounded-full shadow-sm border border-border/50">
-                  {benefit.icon}
-                </div>
-                <h3 className="text-xl font-semibold mb-2">{benefit.title}</h3>
-                <p className="text-muted-foreground">{benefit.description}</p>
-              </FadeIn>
-            ))}
-          </StaggerContainer>
+          <div className="text-center">
+            <Shield className="h-12 w-12 mx-auto text-primary mb-4" />
+            <h3 className="text-xl font-semibold mb-2">Safe & Secure</h3>
+            <p className="text-muted-foreground">
+              KYC-verified travelers and secure payments with escrow.
+            </p>
+          </div>
+          <div className="text-center">
+            <Wallet className="h-12 w-12 mx-auto text-primary mb-4" />
+            <h3 className="text-xl font-semibold mb-2">Save Money</h3>
+            <p className="text-muted-foreground">
+              Avoid high shipping costs and import fees.
+            </p>
+          </div>
         </div>
       </div>
     </section>

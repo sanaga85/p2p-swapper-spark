@@ -1,13 +1,13 @@
-
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
 import { User, authApi, SignupRequest, LoginRequest } from '@/services/api';
-import { useToast } from '@/components/ui/use-toast';
+import { toast } from 'sonner'; // Use sonner directly
+import { useNavigate } from 'react-router-dom';
 
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string, rememberMe?: boolean) => Promise<void>;
   signup: (fullName: string, email: string, password: string) => Promise<void>;
   logout: () => void;
   googleAuth: () => Promise<void>;
@@ -19,78 +19,107 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
-    // Check if user is logged in on mount
-    const token = localStorage.getItem('token');
-    const userData = localStorage.getItem('user');
-    
-    console.log("AuthProvider mounted, checking localStorage for user data");
-    
-    if (token && userData) {
+    const initializeAuth = async () => {
+      const userData = localStorage.getItem('user');
+
+      if (!userData) {
+        setIsLoading(false);
+        return;
+      }
+
       try {
         const parsedUser = JSON.parse(userData);
-        console.log("Found user data in localStorage:", parsedUser);
-        setUser(parsedUser);
+        // Fetch user profile to verify the session (token is sent as HTTP-only cookie)
+        const response = await authApi.getUserProfile(parsedUser.id);
+        setUser(response);
+        localStorage.setItem('user', JSON.stringify(response));
       } catch (error) {
-        console.error('Failed to parse user data', error);
-        localStorage.removeItem('token');
+        console.error('Failed to fetch user profile:', error);
         localStorage.removeItem('user');
+        setUser(null);
+      } finally {
+        setIsLoading(false);
       }
-    } else {
-      console.log("No user data found in localStorage");
-    }
-    
-    setIsLoading(false);
+    };
+
+    initializeAuth();
   }, []);
 
-  const login = async (email: string, password: string) => {
-    try {
-      setIsLoading(true);
-      console.log("Attempting login with email:", email);
-      
-      const loginData: LoginRequest = { email, password };
-      console.log("Login data being sent:", loginData);
-      
-      const response = await authApi.login(loginData);
-      console.log("Login response:", response);
-      
-      if (response && response.token && response.user_id) {
-        localStorage.setItem('token', response.token);
-        console.log("Token saved to localStorage");
-        
-        // Fetch user profile after successful login
-        console.log("Fetching user profile for ID:", response.user_id);
+  // Handle OAuth callback
+  useEffect(() => {
+    const handleOAuthCallback = async () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const success = urlParams.get('success'); // Appwrite may append ?success=true
+
+      if (success === 'true') {
         try {
-          const userProfile = await authApi.getUserProfile(response.user_id);
-          console.log("User profile:", userProfile);
-          
+          // Since the token is an HTTP-only cookie, fetch the user profile directly
+          const userData = localStorage.getItem('user');
+          let userId: string | null = null;
+
+          if (userData) {
+            const parsedUser = JSON.parse(userData);
+            userId = parsedUser.id;
+          }
+
+          if (!userId) {
+            // If we don't have a user ID, we can't proceed
+            throw new Error('User ID not found in localStorage');
+          }
+
+          const userProfile = await authApi.getUserProfile(userId);
           localStorage.setItem('user', JSON.stringify(userProfile));
           setUser(userProfile);
-          
           toast({
             title: 'Success',
-            description: 'You have successfully logged in.',
+            description: 'Logged in successfully via OAuth.',
           });
-        } catch (profileError) {
-          console.error("Error fetching user profile:", profileError);
-          // Still consider login successful even if profile fetch fails
+          navigate('/'); // Redirect to home
+        } catch (error) {
+          console.error('OAuth callback error:', error);
           toast({
-            title: 'Partial Success',
-            description: 'Logged in but could not fetch your profile.',
+            title: 'Authentication Failed',
+            description: 'Failed to authenticate via OAuth.',
+            className: 'bg-destructive text-destructive-foreground',
           });
+          localStorage.removeItem('user');
+          setUser(null);
+          navigate('/login');
         }
-      } else {
-        console.error("Login response invalid:", response);
-        throw new Error("Invalid login response from server");
       }
-    } catch (error) {
-      console.error('Login error:', error);
+    };
+
+    handleOAuthCallback();
+  }, [navigate]);
+
+  const login = async (email: string, password: string, rememberMe: boolean = false) => {
+    try {
+      setIsLoading(true);
+      const loginData: LoginRequest = { email, password, rememberMe };
+      const response = await authApi.login(loginData);
+
+      if (!response.user_id) {
+        throw new Error('Invalid login response from server');
+      }
+
+      // Token is set as HTTP-only cookie by the backend, no need to store it
+      const userProfile = await authApi.getUserProfile(response.user_id);
+      localStorage.setItem('user', JSON.stringify(userProfile));
+      setUser(userProfile);
+
+      toast({
+        title: 'Success',
+        description: 'You have successfully logged in.',
+      });
+      navigate('/profile');
+    } catch (error: any) {
       toast({
         title: 'Login Failed',
-        description: error instanceof Error ? error.message : 'Please check your credentials and try again.',
-        variant: 'destructive',
+        description: error.message || 'Please check your credentials and try again.',
+        className: 'bg-destructive text-destructive-foreground',
       });
       throw error;
     } finally {
@@ -101,54 +130,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signup = async (fullName: string, email: string, password: string) => {
     try {
       setIsLoading(true);
-      console.log("Starting signup process with:", { fullName, email });
-      
       const signupData: SignupRequest = { full_name: fullName, email, password };
-      console.log("Sending signup request with data:", signupData);
-      
-      // Test the API URL before making the request
-      console.log("API URL being used:", import.meta.env.VITE_API_URL);
-      
       const response = await authApi.signup(signupData);
-      console.log("Signup response received:", response);
-      
-      if (response && response.user_id) {
-        console.log("Signup successful with user_id:", response.user_id);
-        
-        // After successful signup, login the user
-        console.log("Proceeding to login with:", email, password);
-        try {
-          await login(email, password);
-          console.log("Login after signup successful");
-          
-          toast({
-            title: 'Account Created',
-            description: 'Your account has been successfully created.',
-          });
-        } catch (loginError) {
-          console.error("Error logging in after signup:", loginError);
-          // Still consider signup successful even if auto-login fails
-          toast({
-            title: 'Account Created',
-            description: 'Your account was created but we could not log you in automatically. Please try logging in.',
-          });
-        }
-      } else {
-        console.error("Signup response missing user_id:", response);
-        throw new Error("Invalid signup response from server");
+
+      if (!response.user_id) {
+        throw new Error('Invalid signup response from server');
       }
+
+      await login(email, password);
+      toast({
+        title: 'Account Created',
+        description: 'Your account has been successfully created.',
+      });
     } catch (error: any) {
-      console.error('Signup error details:', error);
-      let errorMessage = 'There was an error creating your account. Please try again.';
-      
-      if (error.message) {
-        errorMessage = error.message;
-      }
-      
       toast({
         title: 'Signup Failed',
-        description: errorMessage,
-        variant: 'destructive',
+        description: error.message || 'There was an error creating your account. Please try again.',
+        className: 'bg-destructive text-destructive-foreground',
       });
       throw error;
     } finally {
@@ -156,36 +154,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    setUser(null);
-    
-    toast({
-      title: 'Logged Out',
-      description: 'You have been successfully logged out.',
-    });
+  const logout = async () => {
+    try {
+      localStorage.removeItem('user');
+      setUser(null);
+      // Clear the HTTP-only cookie by setting an expired cookie
+      document.cookie = 'auth_token=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
+      toast({
+        title: 'Logged Out',
+        description: 'You have been successfully logged out.',
+      });
+      navigate('/login');
+    } catch (error) {
+      console.error('Logout failed:', error);
+      toast({
+        title: 'Logout Failed',
+        description: 'There was an error logging out. Please try again.',
+        className: 'bg-destructive text-destructive-foreground',
+      });
+    }
   };
 
   const googleAuth = async () => {
     try {
-      console.log("Initiating Google auth");
       const response = await authApi.googleAuth();
-      console.log("Google auth response:", response);
-      
-      if (response && response.url) {
-        console.log("Redirecting to Google auth URL:", response.url);
+      if (response.url) {
         window.location.href = response.url;
       } else {
-        console.error("Invalid Google auth response:", response);
-        throw new Error("Failed to get Google authentication URL");
+        throw new Error('Failed to get Google authentication URL');
       }
     } catch (error) {
-      console.error('Google auth error:', error);
       toast({
         title: 'Authentication Failed',
         description: 'Google authentication failed. Please try again.',
-        variant: 'destructive',
+        className: 'bg-destructive text-destructive-foreground',
       });
       throw error;
     }
@@ -193,23 +195,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const facebookAuth = async () => {
     try {
-      console.log("Initiating Facebook auth");
       const response = await authApi.facebookAuth();
-      console.log("Facebook auth response:", response);
-      
-      if (response && response.url) {
-        console.log("Redirecting to Facebook auth URL:", response.url);
+      if (response.url) {
         window.location.href = response.url;
       } else {
-        console.error("Invalid Facebook auth response:", response);
-        throw new Error("Failed to get Facebook authentication URL");
+        throw new Error('Failed to get Facebook authentication URL');
       }
     } catch (error) {
-      console.error('Facebook auth error:', error);
       toast({
         title: 'Authentication Failed',
         description: 'Facebook authentication failed. Please try again.',
-        variant: 'destructive',
+        className: 'bg-destructive text-destructive-foreground',
       });
       throw error;
     }
@@ -226,11 +222,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     facebookAuth,
   };
 
-  return (
-    <AuthContext.Provider value={contextValue}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = () => {

@@ -1,4 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -35,32 +34,32 @@
 
     --radius: 1rem;
   }
- 
+
   .dark {
     --background: 222 20% 18%;
     --foreground: 210 40% 98%;
- 
+
     --card: 222 20% 18%;
     --card-foreground: 210 40% 98%;
- 
+
     --popover: 222 20% 18%;
     --popover-foreground: 210 40% 98%;
- 
+
     --primary: 255 70% 60%;
     --primary-foreground: 0 0% 100%;
- 
+
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
- 
+
     --muted: 217.2 32.6% 17.5%;
     --muted-foreground: 215 20.2% 65.1%;
- 
+
     --accent: 340 85% 65%;
     --accent-foreground: 0 0% 100%;
- 
+
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
- 
+
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
     --ring: 255 70% 60%;
@@ -70,49 +69,50 @@
 @layer base {
   * {
     @apply border-border;
+    box-sizing: border-box;
   }
+
   html, body {
     @apply antialiased;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
+
   body {
-    @apply bg-background text-foreground;
-    @apply min-h-screen;
+    @apply bg-background text-foreground min-h-screen;
     background-image: linear-gradient(to bottom right, #fffcdc, #d5fffd, #e1dcff, #ffe8f5);
     background-attachment: fixed;
   }
-  
+
   /* Smooth scrolling for the entire page */
   html {
     scroll-behavior: smooth;
   }
-  
+
   /* Custom scrollbar */
   ::-webkit-scrollbar {
     width: 8px;
     height: 8px;
   }
-  
+
   ::-webkit-scrollbar-track {
     @apply bg-secondary/50 rounded-full;
   }
-  
+
   ::-webkit-scrollbar-thumb {
-    @apply bg-gradient-to-b from-purple-400 via-pink-400 to-blue-400 rounded-full transition-colors;
+    @apply bg-gradient-to-b from-purple-400 via-pink-400 to-blue-400 rounded-full;
   }
-  
+
   ::-webkit-scrollbar-thumb:hover {
     @apply bg-gradient-to-b from-purple-500 via-pink-500 to-blue-500;
   }
-  
-  /* Remove focus outline for mouse users but keep it for keyboard */
+
+  /* Focus styles for accessibility */
   :focus:not(:focus-visible) {
     outline: none;
   }
-  
-  /* Keep focus outline for keyboard navigation */
+
   :focus-visible {
     @apply outline-none ring-2 ring-ring ring-offset-2;
   }
@@ -122,34 +122,34 @@
   .card-hover {
     @apply transition-all duration-300 hover:shadow-lg hover:-translate-y-1;
   }
-  
+
   .glass {
     @apply bg-white/60 backdrop-blur-md border border-white/30 shadow-md;
   }
-  
+
   .glass-card {
     @apply glass rounded-2xl p-6;
   }
-  
+
   .rainbow-border {
     @apply relative rounded-xl p-[2px] overflow-hidden;
     background: linear-gradient(60deg, #5f2c82, #833ab4, #fd1d1d, #fcb045, #ffdb3a, #3a47d5, #2a0845);
     background-size: 300% 300%;
     animation: rainbow-border 8s linear infinite;
   }
-  
+
   .rainbow-text {
     @apply bg-clip-text text-transparent bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500;
   }
-  
+
   .page-transition {
     @apply animate-fade-in;
   }
-  
+
   .button-hover {
     @apply transition-all duration-200 hover:shadow-md active:scale-95;
   }
-  
+
   .input-focus {
     @apply focus:ring-2 focus:ring-primary/30 focus:border-primary transition duration-200;
   }
@@ -160,7 +160,7 @@
 
   .gradient-card {
     @apply rounded-xl overflow-hidden relative;
-    background: linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.1) 100%);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.1) 100%);
     border: 1px solid rgba(255, 255, 255, 0.2);
     backdrop-filter: blur(10px);
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
@@ -194,5 +194,60 @@
     100% {
       transform: translateY(0px);
     }
+  }
+
+  /* Define fade-in animation for page transitions */
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .card-hover,
+  .button-hover,
+  .floating,
+  .rainbow-border,
+  .page-transition {
+    animation: none;
+    transition: none;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 0%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 0%;
+    --primary: 0 0% 0%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 0 0% 90%;
+    --secondary-foreground: 0 0% 0%;
+    --border: 0 0% 50%;
+  }
+
+  .glass,
+  .glass-card,
+  .gradient-card {
+    background: #ffffff;
+    border: 2px solid #000000;
+    box-shadow: none;
+    backdrop-filter: none;
+  }
+
+  .rainbow-border,
+  .rainbow-text {
+    background: none;
+    color: #000000;
+    border: 2px solid #000000;
   }
 }

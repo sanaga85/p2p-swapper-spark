@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { FadeIn } from '@/components/ui/motion';
 import { Button } from '@/components/ui/button';
@@ -8,113 +7,173 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth } from '@/contexts/AuthContext';
-import { Facebook, Loader2 } from 'lucide-react';
+import { Facebook, Loader2, AlertCircle } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+import { Helmet } from 'react-helmet-async'; // For SEO
 
 const LoginPage: React.FC = () => {
-  const { login, googleAuth, facebookAuth } = useAuth();
+  const { login, googleAuth, facebookAuth, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
-  
+
   // Get the redirect path from location state, or default to '/'
   const from = (location.state as any)?.from || '/';
-  
+
   const [formData, setFormData] = useState({
     email: '',
     password: '',
-    rememberMe: false,
+    rememberMe: localStorage.getItem('rememberMe') === 'true',
   });
-  
+
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
-  
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate(from, { replace: true });
+    }
+  }, [isAuthenticated, navigate, from]);
+
+  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-    // Clear error when user starts typing in a field
+    // Sanitize input to prevent XSS
+    const sanitizedValue = value.replace(/[<>{}]/g, '');
+    setFormData((prev) => ({ ...prev, [name]: sanitizedValue }));
     if (errors[name]) {
-      setErrors(prev => {
+      setErrors((prev) => {
         const newErrors = { ...prev };
         delete newErrors[name];
         return newErrors;
       });
     }
-  };
-  
-  const handleCheckboxChange = (checked: boolean) => {
-    setFormData(prev => ({ ...prev, rememberMe: checked }));
-  };
-  
-  const validateForm = () => {
+  }, [errors]);
+
+  const handleCheckboxChange = useCallback((checked: boolean) => {
+    setFormData((prev) => ({ ...prev, rememberMe: checked }));
+  }, []);
+
+  const validateForm = useCallback(() => {
     const newErrors: Record<string, string> = {};
-    
+
     if (!formData.email.trim()) {
       newErrors.email = 'Email is required';
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = 'Email is invalid';
+    } else if (formData.email.length > 255) {
+      newErrors.email = 'Email cannot exceed 255 characters';
     }
-    
+
     if (!formData.password) {
       newErrors.password = 'Password is required';
+    } else if (formData.password.length < 8) {
+      newErrors.password = 'Password must be at least 8 characters long';
+    } else if (formData.password.length > 128) {
+      newErrors.password = 'Password cannot exceed 128 characters';
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  };
-  
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!validateForm()) return;
-    
+  }, [formData]);
+
+  const handleSubmit = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+
+      if (!validateForm()) return;
+
+      try {
+        setIsLoading(true);
+        await login(formData.email, formData.password);
+
+        // Handle "Remember Me" functionality
+        if (formData.rememberMe) {
+          localStorage.setItem('rememberMe', 'true');
+        } else {
+          localStorage.removeItem('rememberMe');
+        }
+
+        toast({
+          title: 'Success',
+          description: 'You have successfully logged in.',
+        });
+
+        navigate(from, { replace: true });
+      } catch (error: any) {
+        const errorMessage =
+          error.message || 'Failed to log in. Please check your credentials and try again.';
+        toast({
+          title: 'Error',
+          description: errorMessage,
+          variant: 'destructive',
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [formData, validateForm, login, navigate, from, toast]
+  );
+
+  const handleGoogleAuth = useCallback(async () => {
     try {
       setIsLoading(true);
-      await login(formData.email, formData.password);
-      
-      // If rememberMe is checked, we could set a longer expiration time
-      // for the token in localStorage, but that would require backend support
-      if (formData.rememberMe) {
-        localStorage.setItem('rememberMe', 'true');
-      } else {
-        localStorage.removeItem('rememberMe');
-      }
-      
-      navigate(from);
-    } catch (error) {
-      console.error('Login error:', error);
+      await googleAuth();
+      // Navigation is handled by the redirect from the backend
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to authenticate with Google.',
+        variant: 'destructive',
+      });
     } finally {
       setIsLoading(false);
     }
-  };
-  
-  const handleGoogleAuth = async () => {
+  }, [googleAuth, toast]);
+
+  const handleFacebookAuth = useCallback(async () => {
     try {
-      await googleAuth();
-    } catch (error) {
-      console.error('Google auth error:', error);
-    }
-  };
-  
-  const handleFacebookAuth = async () => {
-    try {
+      setIsLoading(true);
       await facebookAuth();
-    } catch (error) {
-      console.error('Facebook auth error:', error);
+      // Navigation is handled by the redirect from the backend
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to authenticate with Facebook.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
     }
-  };
-  
+  }, [facebookAuth, toast]);
+
   return (
     <div className="min-h-screen flex items-center justify-center p-4 pt-20">
+      {/* SEO Optimization */}
+      <Helmet>
+        <title>Login - Grabr.io</title>
+        <meta
+          name="description"
+          content="Log in to Grabr.io to connect with travelers, shop globally, or earn money by delivering items."
+        />
+        <meta name="robots" content="noindex, nofollow" />
+        <link rel="canonical" href="https://www.grabr.io/login" />
+      </Helmet>
+
       <FadeIn className="w-full max-w-md">
-        <Card className="w-full shadow-lg border-border/50 overflow-hidden">
+        <Card className="w-full shadow-lg border-border/50 overflow-hidden glass-card">
           <CardHeader className="space-y-1 text-center">
-            <CardTitle className="text-2xl font-bold">Welcome back</CardTitle>
+            <CardTitle className="text-2xl font-bold">Welcome Back</CardTitle>
           </CardHeader>
-          
+
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
-              <Button variant="outline" className="w-full" onClick={handleGoogleAuth}>
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={handleGoogleAuth}
+                disabled={isLoading}
+              >
                 <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
                   <path
                     d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -136,13 +195,18 @@ const LoginPage: React.FC = () => {
                 </svg>
                 Google
               </Button>
-              
-              <Button variant="outline" className="w-full" onClick={handleFacebookAuth}>
+
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={handleFacebookAuth}
+                disabled={isLoading}
+              >
                 <Facebook className="mr-2 h-4 w-4 text-blue-600" />
                 Facebook
               </Button>
             </div>
-            
+
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
                 <span className="w-full border-t" />
@@ -153,7 +217,7 @@ const LoginPage: React.FC = () => {
                 </span>
               </div>
             </div>
-            
+
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
@@ -165,16 +229,22 @@ const LoginPage: React.FC = () => {
                   value={formData.email}
                   onChange={handleChange}
                   className={errors.email ? 'border-red-500' : ''}
+                  autoComplete="email"
+                  maxLength={255}
+                  disabled={isLoading}
                 />
                 {errors.email && (
-                  <p className="text-red-500 text-xs mt-1">{errors.email}</p>
+                  <p className="text-red-500 text-xs mt-1 flex items-center">
+                    <AlertCircle className="h-4 w-4 mr-1" />
+                    {errors.email}
+                  </p>
                 )}
               </div>
-              
+
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="password">Password</Label>
-                  <Link 
+                  <Link
                     to="/forgot-password"
                     className="text-sm text-primary hover:underline"
                   >
@@ -188,31 +258,31 @@ const LoginPage: React.FC = () => {
                   value={formData.password}
                   onChange={handleChange}
                   className={errors.password ? 'border-red-500' : ''}
+                  autoComplete="current-password"
+                  maxLength={128}
+                  disabled={isLoading}
                 />
                 {errors.password && (
-                  <p className="text-red-500 text-xs mt-1">{errors.password}</p>
+                  <p className="text-red-500 text-xs mt-1 flex items-center">
+                    <AlertCircle className="h-4 w-4 mr-1" />
+                    {errors.password}
+                  </p>
                 )}
               </div>
-              
+
               <div className="flex items-center space-x-2">
-                <Checkbox 
-                  id="rememberMe" 
+                <Checkbox
+                  id="rememberMe"
                   checked={formData.rememberMe}
                   onCheckedChange={handleCheckboxChange}
+                  disabled={isLoading}
                 />
-                <Label 
-                  htmlFor="rememberMe"
-                  className="text-sm font-normal"
-                >
+                <Label htmlFor="rememberMe" className="text-sm font-normal">
                   Remember me for 30 days
                 </Label>
               </div>
-              
-              <Button 
-                type="submit" 
-                className="w-full" 
-                disabled={isLoading}
-              >
+
+              <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -224,10 +294,10 @@ const LoginPage: React.FC = () => {
               </Button>
             </form>
           </CardContent>
-          
+
           <CardFooter>
             <div className="text-center w-full text-sm">
-              Don't have an account?{" "}
+              Don't have an account?{' '}
               <Link to="/signup" className="text-primary hover:underline">
                 Sign up
               </Link>
